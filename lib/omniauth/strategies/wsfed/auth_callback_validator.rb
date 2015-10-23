@@ -33,8 +33,10 @@ module OmniAuth
         end
 
         def validate_audience!
+          audience = auth_callback.audience.ends_with?('/') ? auth_callback.audience : auth_callback.audience + '/'
+          realm = wsfed_settings[:realm].ends_with?('/') ? wsfed_settings[:realm] : wsfed_settings[:realm] + '/'
           raise OmniAuth::Strategies::WSFed::ValidationError.new(AUDIENCE_MISMATCH) unless
-              auth_callback.audience == wsfed_settings[:realm]
+              audience == realm
         end
 
         def validate_token_expiration!
