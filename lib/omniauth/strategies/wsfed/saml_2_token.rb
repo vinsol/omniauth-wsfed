@@ -11,27 +11,28 @@ module OmniAuth
 
         def audience
           applies_to = REXML::XPath.first(document, '//t:RequestSecurityTokenResponse/wsp:AppliesTo', { 't' => WS_TRUST, 'wsp' => WS_POLICY })
-          REXML::XPath.first(applies_to, '//EndpointReference/Address').text
+          REXML::XPath.first(applies_to, '//wsa:EndpointReference/wsa:Address').text
         end
 
         def issuer
-          REXML::XPath.first(document, '//Assertion/Issuer').text
+          # REXML::XPath.first(document, '//Assertion/Issuer').text
+          REXML::XPath.first(document, '//saml:Assertion/@Issuer').value
         end
 
         def claims
-          stmt_element = REXML::XPath.first(document, '//Assertion/AttributeStatement')
+          stmt_element = REXML::XPath.first(document, '//saml:Assertion/saml:AttributeStatement')
 
           return {} if stmt_element.nil?
 
           {}.tap do |result|
-            stmt_element.elements.each do |attr_element|
-              name  = attr_element.attributes['Name']
+            stmt_element.elements.select{|x| x.attributes.has_key?('AttributeName')}.each do |attr_element|
+              name  = attr_element.attributes['AttributeName']
 
               if attr_element.elements.count > 1
                 value = []
                 attr_element.elements.each { |element| value << element.text }
               else
-                value = attr_element.elements.first.text.to_s.lstrip.rstrip
+                value = attr_element.elements.first.text.lstrip.rstrip
               end
 
               result[name] = value
